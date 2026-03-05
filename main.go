@@ -12,6 +12,7 @@ import (
 /// 低优先级的帧一直仲裁失败-》优先级饥饿  解决办法：错误计数，限流高频率发送高优先级的节点，优先级提升，重试队列
 
 // 这里用一个节点来模拟一个ecu或者设备
+
 type Node struct {
 	Name          string       // 节点名称
 	Bus           *Bus         // 关联的总线 说明：实车可能包含多个can总线，这里只模拟一个总线
@@ -21,7 +22,9 @@ type Node struct {
 
 // 数据帧
 type Frame struct {
-	ID        int    // 消息ID，也表示优先级（小ID优先）说明：一般规定id为一个操作指令，优先级越小越先处理
+	// 消息ID，也表示优先级（小ID优先）说明：一般规定id为一个操作指令（所以id一般不会改变），优先级越小越先处理
+	// 十六进制 可以进行位仲裁，效率更高，电控系统，通信效率就是生命
+	ID        int
 	From      string // 发送节点
 	Data      string // 消息内容
 	Timestamp int64  // 发送时间，毫秒级时间戳
@@ -100,6 +103,13 @@ func (bus *Bus) Start() {
 				for i, f := range buffer {
 					if i != minIdx {
 						f.FailCount++
+
+						// 一般不使用该方式，因为id一般固定标识某一种功能，不能随便改变
+						//// 失败超过三次，提升优先级
+						//if f.FailCount >= 3 && f.ID > 0 {
+						//	f.ID -= 1
+						//}
+
 						newBuffer = append(newBuffer, f)
 					}
 				}
@@ -117,13 +127,13 @@ func main() {
 	}
 	bus.Start()
 	node1 := &Node{
-		Name:          "Node1",
+		Name:          "这是高优先级指令，且频率较高", // 高优先级帧必须周期发送，但周期不能太小，周期可以设置最大周期和最小周期，动态调整
 		Bus:           bus,
 		SubscribedIDs: map[int]bool{1: true, 2: true},
 		ReceiveChan:   make(chan Frame, 100),
 	}
 	node2 := &Node{
-		Name:          "Node2",
+		Name:          "这是低优先级指令",
 		Bus:           bus,
 		SubscribedIDs: map[int]bool{1: true, 3: true},
 		ReceiveChan:   make(chan Frame, 100),
@@ -131,8 +141,13 @@ func main() {
 	bus.Nodes = append(bus.Nodes, node1, node2)
 	go node1.Listen()
 	go node2.Listen()
-	node1.Send(1, "Hello World!")
-	node2.Send(3, "Hi!")
+	go func() {
+		for {
+			node1.Send(1, "转向")
+			time.Sleep(5 * time.Millisecond) // 如果高优先级帧不周期发送，低优先级帧无法进入队列
+		}
+	}()
+	node2.Send(3, "空调温度降低")
 
 	for {
 		time.Sleep(time.Second)
