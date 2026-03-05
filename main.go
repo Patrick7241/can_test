@@ -55,16 +55,51 @@ func (n *Node) Send(id int, data string) {
 // 总线处理数据帧
 func (bus *Bus) Start() {
 	go func() {
-		for {
-			frame := <-bus.SendQueue
-			// 简化：暂时直接广播，不进行仲裁
-			bus.BroadcastCh <- frame
+		// 缓存窗口，用于收集同时发来的帧
+		var buffer []Frame
 
-			for _, node := range bus.Nodes {
-				select {
-				case node.ReceiveChan <- frame:
-				default:
+		// 仲裁的时间窗口
+		ticker := time.NewTicker(5 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case frame := <-bus.SendQueue:
+				buffer = append(buffer, frame)
+
+			case <-ticker.C:
+				if len(buffer) == 0 {
+					continue
 				}
+
+				// 仲裁：按 ID 排序，ID 小优先
+				minIdx := 0
+				for i := 1; i < len(buffer); i++ {
+					if buffer[i].ID < buffer[minIdx].ID {
+						minIdx = i
+					}
+				}
+				// 赢的帧
+				win := buffer[minIdx]
+
+				fmt.Printf("[总线] 仲裁结果: %v\n", win)
+
+				// 广播
+				for _, node := range bus.Nodes {
+					select {
+					case node.ReceiveChan <- win:
+					default:
+					}
+				}
+
+				// buffer 中其他帧留到下一轮，模拟 CAN 失败的节点重新发送
+				var newBuffer []Frame
+				for i, f := range buffer {
+					if i != minIdx {
+						newBuffer = append(newBuffer, f)
+					}
+				}
+				buffer = newBuffer
 			}
 		}
 	}()
