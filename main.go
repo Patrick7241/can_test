@@ -9,6 +9,8 @@ import (
 
 /// 电车的电控转向优先级极高，且一般使用独立的can
 
+/// 低优先级的帧一直仲裁失败-》优先级饥饿  解决办法：错误计数，限流高频率发送高优先级的节点，优先级提升，重试队列
+
 // 这里用一个节点来模拟一个ecu或者设备
 type Node struct {
 	Name          string       // 节点名称
@@ -23,6 +25,7 @@ type Frame struct {
 	From      string // 发送节点
 	Data      string // 消息内容
 	Timestamp int64  // 发送时间，毫秒级时间戳
+	FailCount int    // 错误计数
 }
 
 // 总线，即一个can
@@ -96,6 +99,7 @@ func (bus *Bus) Start() {
 				var newBuffer []Frame
 				for i, f := range buffer {
 					if i != minIdx {
+						f.FailCount++
 						newBuffer = append(newBuffer, f)
 					}
 				}
