@@ -1,0 +1,70 @@
+# =========================
+# Go build
+# =========================
+bin/
+dist/
+build/
+*.exe
+*.test
+*.out
+*.log
+
+# Go coverage
+coverage.out
+
+# Go modules
+vendor/
+
+# =========================
+# GoLand / IntelliJ
+# =========================
+.idea/
+*.iml
+
+# 如果你想保留 run configuration，可以用下面这个替代
+# .idea/*
+# !.idea/runConfigurations
+
+# =========================
+# macOS
+# =========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Env
+# =========================
+.env
+.env.local
+.env.*
+
+# =========================
+# Temporary
+# =========================
+tmp/
+temp/
+*.tmp
+
+# =========================
+# Editor
+# =========================
+.vscode/
