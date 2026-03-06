@@ -1,6 +1,7 @@
-package main
+package gameplay
 
 import (
+	"can_test/vehicles/volkswagen_id4/can"
 	"fmt"
 	"image/color"
 	"math/rand"
@@ -25,8 +26,8 @@ import (
 */
 
 const (
-	screenWidth  = 480
-	screenHeight = 360
+	ScreenWidth  = 480
+	ScreenHeight = 360
 	roadWidth    = 200.0
 	laneWidth    = roadWidth / 3.0
 )
@@ -85,24 +86,24 @@ type Game struct {
 	gameTime    float64
 	lastSpawn   float64
 	spawnRate   float64
-	canBus      *CANBus
-	vehicleECU  *VehicleECU
-	dashboard   *DashboardListener
+	canBus      *can.CANBus
+	vehicleECU  *can.VehicleECU
+	dashboard   *can.DashboardListener
 	roadOffset  float64
 	isPaused    bool
 }
 
-// NewGame 创建游戏
-func NewGame() *Game {
+// New 创建游戏
+func New() *Game {
 	// 初始化CAN总线
-	canBus := NewCANBus("VW-ID4-CAN")
+	canBus := can.NewCANBus("VW-ID4-CAN")
 	canBus.Start()
 
 	// 创建车辆ECU
-	vehicleECU := NewVehicleECU("ID4-ECU", canBus, 100*time.Millisecond)
+	vehicleECU := can.NewVehicleECU("ID4-ECU", canBus, 100*time.Millisecond)
 
 	// 创建仪表盘监听器
-	dashboard := NewDashboardListener("仪表盘")
+	dashboard := can.NewDashboardListener("仪表盘")
 	canBus.Subscribe(0xFD, dashboard)  // 车速
 	canBus.Subscribe(0xB5, dashboard)  // 档位
 	canBus.Subscribe(0x3EB, dashboard) // 刹车油门
@@ -114,8 +115,8 @@ func NewGame() *Game {
 	// 创建玩家
 	player := &Player{
 		GameObject: GameObject{
-			X:      screenWidth/2 - 20,
-			Y:      screenHeight - 120,
+			X:      ScreenWidth/2 - 20,
+			Y:      ScreenHeight - 120,
 			Width:  40,
 			Height: 70,
 			Color:  color.RGBA{0, 150, 255, 255}, // 蓝色车
@@ -139,6 +140,16 @@ func NewGame() *Game {
 	}
 
 	return game
+}
+
+// Cleanup 清理资源
+func (g *Game) Cleanup() {
+	if g.vehicleECU != nil {
+		g.vehicleECU.Stop()
+	}
+	if g.canBus != nil {
+		g.canBus.Stop()
+	}
 }
 
 // Update 游戏更新逻辑
@@ -202,7 +213,7 @@ func (g *Game) Update() error {
 	case StateGameOver:
 		if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 			// 重新开始
-			*g = *NewGame()
+			*g = *New()
 			g.state = StatePlaying
 			g.vehicleECU.State.Gear = 3
 		}
@@ -251,7 +262,7 @@ func (g *Game) handleInput() {
 // updatePlayer 更新玩家位置
 func (g *Game) updatePlayer() {
 	// 计算目标X位置
-	roadLeft := screenWidth/2 - roadWidth/2
+	roadLeft := ScreenWidth/2 - roadWidth/2
 	targetX := roadLeft + float64(g.player.Lane)*laneWidth + laneWidth/2 - g.player.Width/2
 
 	// 平滑移动到目标车道
@@ -261,7 +272,7 @@ func (g *Game) updatePlayer() {
 // spawnObstacle 生成障碍物
 func (g *Game) spawnObstacle() {
 	lane := rand.Intn(3)
-	roadLeft := screenWidth/2 - roadWidth/2
+	roadLeft := ScreenWidth/2 - roadWidth/2
 	x := roadLeft + float64(lane)*laneWidth + laneWidth/2 - 20
 
 	obstacleType := []string{"car", "cone", "barrier"}[rand.Intn(3)]
@@ -304,7 +315,7 @@ func (g *Game) updateObstacles() {
 		obs.Y += obs.VelY
 
 		// 移除屏幕外的障碍物
-		if obs.Y > screenHeight {
+		if obs.Y > ScreenHeight {
 			g.obstacles = append(g.obstacles[:i], g.obstacles[i+1:]...)
 		}
 	}
@@ -338,7 +349,7 @@ func (g *Game) drawMenu(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{20, 20, 20, 255})
 
 	menuText := "大众ID.4 CAN总线驾驶游戏\n\n\nW/S - 油门/刹车\nA/D - 切换车道\n躲避障碍物\n\n\n按空格开始"
-	ebitenutil.DebugPrintAt(screen, menuText, screenWidth/2-100, screenHeight/2-80)
+	ebitenutil.DebugPrintAt(screen, menuText, ScreenWidth/2-100, ScreenHeight/2-80)
 }
 
 // drawGame 绘制游戏画面
@@ -362,17 +373,17 @@ func (g *Game) drawGame(screen *ebiten.Image) {
 
 	// 暂停提示
 	if g.isPaused {
-		ebitenutil.DebugPrintAt(screen, "游戏暂停 - 按P继续", screenWidth/2-100, screenHeight/2)
+		ebitenutil.DebugPrintAt(screen, "游戏暂停 - 按P继续", ScreenWidth/2-100, ScreenHeight/2)
 	}
 }
 
 // drawRoad 绘制道路
 func (g *Game) drawRoad(screen *ebiten.Image) {
-	roadLeft := float32(screenWidth/2 - roadWidth/2)
-	roadRight := float32(screenWidth/2 + roadWidth/2)
+	roadLeft := float32(ScreenWidth/2 - roadWidth/2)
+	roadRight := float32(ScreenWidth/2 + roadWidth/2)
 
 	// 道路底色
-	vector.DrawFilledRect(screen, roadLeft, 0, float32(roadWidth), float32(screenHeight),
+	vector.DrawFilledRect(screen, roadLeft, 0, float32(roadWidth), float32(ScreenHeight),
 		color.RGBA{40, 40, 40, 255}, false)
 
 	// 车道分隔线
@@ -382,16 +393,16 @@ func (g *Game) drawRoad(screen *ebiten.Image) {
 
 	for lane := 1; lane < 3; lane++ {
 		lineX := roadLeft + float32(float64(lane)*laneWidth)
-		for y := -offset; y < float32(screenHeight); y += dashHeight + dashGap {
+		for y := -offset; y < float32(ScreenHeight); y += dashHeight + dashGap {
 			vector.DrawFilledRect(screen, lineX-2, y, 4, dashHeight,
 				color.RGBA{255, 255, 255, 255}, false)
 		}
 	}
 
 	// 道路边缘
-	vector.DrawFilledRect(screen, roadLeft-10, 0, 10, float32(screenHeight),
+	vector.DrawFilledRect(screen, roadLeft-10, 0, 10, float32(ScreenHeight),
 		color.RGBA{200, 200, 200, 255}, false)
-	vector.DrawFilledRect(screen, roadRight, 0, 10, float32(screenHeight),
+	vector.DrawFilledRect(screen, roadRight, 0, 10, float32(ScreenHeight),
 		color.RGBA{200, 200, 200, 255}, false)
 }
 
@@ -445,10 +456,10 @@ func (g *Game) drawGameOver(screen *ebiten.Image) {
 		g.gameTime,
 	)
 
-	ebitenutil.DebugPrintAt(screen, gameOverText, screenWidth/2-80, screenHeight/2-60)
+	ebitenutil.DebugPrintAt(screen, gameOverText, ScreenWidth/2-80, ScreenHeight/2-60)
 }
 
 // Layout 游戏布局
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return ScreenWidth, ScreenHeight
 }

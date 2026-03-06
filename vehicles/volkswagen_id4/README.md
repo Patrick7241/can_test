@@ -7,13 +7,16 @@
 ```
 volkswagen_id4/
 ├── main.go          # 游戏主入口（唯一的main函数）
-├── game.go          # 游戏核心逻辑
-├── signals.go       # CAN信号定义
-├── canbus.go        # CAN总线实现
-├── ecu.go           # 车辆ECU
-├── listeners.go     # 监听器实现
-├── start_game.sh    # 启动脚本
-├── docs/            # 文档目录
+├── gameplay/        # 游戏逻辑
+│   └── game.go     # 游戏核心逻辑
+├── can/            # CAN总线系统
+│   ├── canbus.go   # CAN总线实现
+│   ├── signals.go  # CAN信号定义
+│   ├── ecu.go      # 车辆ECU
+│   └── listeners.go # 监听器实现
+├── scripts/        # 工具脚本
+│   └── start_game.sh # 启动脚本
+├── docs/           # 文档目录
 │   ├── GAME.md
 │   ├── CANBUS.md
 │   └── TROUBLESHOOTING.md
@@ -26,7 +29,7 @@ volkswagen_id4/
 
 ```bash
 cd vehicles/volkswagen_id4
-./start_game.sh
+./scripts/start_game.sh
 ```
 
 启动脚本会自动：

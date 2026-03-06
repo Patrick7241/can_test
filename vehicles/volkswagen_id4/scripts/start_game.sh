@@ -25,12 +25,13 @@ if pgrep -x "Google Chrome" > /dev/null; then
     echo ""
 fi
 
-cd "$(dirname "$0")"
+# 切换到项目根目录
+cd "$(dirname "$0")/.."
 
 # 编译游戏（如果需要）
 if [ ! -f "./game" ] || [ "main.go" -nt "./game" ]; then
     echo "正在编译游戏..."
-    go build -o game *.go
+    go build -o game .
     if [ $? -ne 0 ]; then
         echo "❌ 编译失败"
         exit 1
