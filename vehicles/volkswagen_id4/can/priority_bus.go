@@ -3,6 +3,7 @@ package can
 import (
 	"container/heap"
 	"fmt"
+	"sync"
 	"time"
 )
 

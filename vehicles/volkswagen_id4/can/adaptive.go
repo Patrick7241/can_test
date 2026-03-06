@@ -3,6 +3,7 @@ package can
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 /*
@@ -16,11 +17,11 @@ import (
 // AdaptiveCANBus 自适应CAN总线（支持动态扩容）
 type AdaptiveCANBus struct {
 	*CANBus
-	maxBufferSize    int
-	resizeThreshold  float64 // 触发扩容的使用率阈值
-	lastResizeTime   time.Time
-	resizeCooldown   time.Duration // 扩容冷却时间
-	resizeMu         sync.Mutex
+	maxBufferSize   int
+	resizeThreshold float64 // 触发扩容的使用率阈值
+	lastResizeTime  time.Time
+	resizeCooldown  time.Duration // 扩容冷却时间
+	resizeMu        sync.Mutex
 }
 
 // NewAdaptiveCANBus 创建自适应总线

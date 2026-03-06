@@ -3,6 +3,7 @@ package can
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 )
 
 /*
@@ -17,7 +18,7 @@ import (
 type SamplingStrategy int
 
 const (
-	SampleAll    SamplingStrategy = iota // 处理所有帧
+	SampleAll     SamplingStrategy = iota // 处理所有帧
 	SampleHalf                            // 处理50%
 	SampleQuarter                         // 处理25%
 	SampleTenth                           // 处理10%
