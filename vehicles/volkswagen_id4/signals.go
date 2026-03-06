@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 /*
 ========================================
@@ -275,4 +278,20 @@ func ListAllSignals() {
 		i++
 	}
 	fmt.Printf("\n共 %d 个信号\n", len(ID4Signals))
+}
+
+// VehicleState 车辆状态
+type VehicleState struct {
+	Speed              float64   // km/h
+	Gear               int       // 0=P, 1=R, 2=N, 3=D
+	BrakePosition      float64   // %
+	AcceleratorPos     float64   // %
+	SteeringAngle      float64   // 度
+	SteeringDirection  int       // 0=右, 1=左
+	LateralAccel       float64   // g
+	LongitudinalAccel  float64   // g
+	YawRate            float64   // °/s
+	AirTemp            float64   // °C
+	LastUpdate         time.Time // 最后更新时间
+	TotalDistance      float64   // 总里程 km
 }

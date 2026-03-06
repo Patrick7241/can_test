@@ -70,3 +70,10 @@ temp/
 .vscode/
 
 *.REF
+# Game executable
+game_demo
+canbus_demo
+game
+
+# Claude
+.claude/
